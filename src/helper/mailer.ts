@@ -4,18 +4,21 @@ import bcryptjs from "bcryptjs";
 
 export const sendEmail = async ({ email, emailType, userId }: any) => {
   try {
-    //todo : configure mail for usage
     const hashedToken = await bcryptjs.hash(userId.toString(), 10);
 
     if (emailType === "VERIFY") {
-      await User.findById(userId, {
-        verifyToken: hashedToken,
-        verifyTokenExpiry: Date.now() + 3600000,
+      await User.findByIdAndUpdate(userId, {
+        $set: {
+          verifyToken: hashedToken,
+          verifyTokenExpiry: Date.now() + 3600000,
+        },
       });
     } else if (emailType === "RESET") {
-      await User.findById(userId, {
-        forgotPasswordToken: hashedToken,
-        forgotPasswordTokenExpiry: Date.now() + 3600000,
+      await User.findByIdAndUpdate(userId, {
+        $set: {
+          forgotPasswordToken: hashedToken,
+          forgotPasswordTokenExpiry: Date.now() + 3600000, // expire in one hour from now
+        },
       });
     }
 
@@ -32,12 +35,12 @@ export const sendEmail = async ({ email, emailType, userId }: any) => {
       from: "maddison53@ethereal.email", // sender address
       to: email, // mail receivers
       subject: emailType, // Subject line
-      //text: "Hello world?", // plain text body
       html: `<p>Click <a href="${
         process.env.DOMAIN
       }/verifyemail?token=${hashedToken}">here</a> to ${
-        emailType === "VERIFY" ? "verify your email" : "reset your password"
-      } or copy and paste the link below in your brower.
+        emailType === "VERIFY" ? "verify your email" : "reset your 
+        password"
+      } or copy and paste the link below in your browser.
       <br>
       ${process.env.DOMAIN}/verifyemail?token=${hashedToken}
       </p>`, // html body
